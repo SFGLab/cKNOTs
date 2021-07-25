@@ -37,7 +37,7 @@ def check_motif_orientation(input_bedpe: str, motif: str, reference: str, output
     out_bedpe = pd.DataFrame()
 
     for chr_name in CHROMOSOMES:
-        print(f'[INFO] Running chromosome {chr_name}.')
+        print(f'[INFO] Running chromosome {chr_name}...')
         file_fa = read_fasta(reference, chr_name)
         seq = file_fa.seq
         motif_orientation = get_motif_orientation(motif, chr_name, seq)
@@ -55,10 +55,10 @@ def check_motif_orientation(input_bedpe: str, motif: str, reference: str, output
             .split(',', expand=True)\
             .rename(columns={0: 'orientation1', 1: 'orientation2'})
 
-        bedpe_chr.insert(6, orientation_columns['orientation1'], 'orientation1')
-        bedpe_chr.insert(7, orientation_columns['orientation1'], 'orientation1')
+        bedpe_chr.insert(7, 'orientation1', orientation_columns['orientation1'],)
+        bedpe_chr.insert(8, 'orientation2', orientation_columns['orientation2'])
 
-        pd.concat([out_bedpe, bedpe_chr], ignore_index=True)
+        out_bedpe = pd.concat([out_bedpe, bedpe_chr], ignore_index=True)
 
     out_bedpe.to_csv(output, sep='\t', index=False, header=False)
 
