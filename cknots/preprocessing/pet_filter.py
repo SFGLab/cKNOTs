@@ -2,9 +2,17 @@
 Filters .bedpe file by selecting only interactions
 with number of PET count greater or equal than
 probided value.
+
+Usage:
+    pet_filter.py <in_bedpe> <out_bedpe> <min_pet_count>
+    pet_filter.py (-h | --help)
+
+Options:
+    -h --help     Show this help message.
 """
 
 from tqdm import tqdm
+from docopt import docopt
 
 
 def filter_by_pet_count(input_bedpe: str, output: str, min_pet_count: int) -> None:
@@ -32,8 +40,9 @@ def count_lines(file_path):
 
 
 if __name__ == '__main__':
+    parsed_args = docopt(__doc__)
     filter_by_pet_count(
-        input_bedpe='../../data/contacts/CTCF/GM12878.bedpe',
-        output='../../out_pet.bedpe',
-        min_pet_count=5
+        input_bedpe=parsed_args['<in_bedpe>'],
+        output=parsed_args['<out_bedpe>'],
+        min_pet_count=parsed_args['<min_pet_count>']
     )

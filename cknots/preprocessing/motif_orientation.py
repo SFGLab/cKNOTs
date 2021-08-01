@@ -1,9 +1,24 @@
+"""
+Finds protein motif orientation in both ends
+of PET in bedpe file.
+
+Usage:
+    cknots.py preprocess orientation <in_bedpe> <in_motif> <in_ref> <out_bedpe>
+    cknots.py (-h | --help)
+
+Options:
+    -h --help     Show this help message.
+"""
+
+
 import multiprocessing
 
 import dask.dataframe
+from docopt import docopt
 import numpy as np
 import pandas as pd
 from Bio import SeqIO, motifs, SeqRecord
+
 
 BEDPE_COLS = [
     'chrom1', 'start1', 'end1', 'chrom2', 'start2', 'end2', 'count'
@@ -18,19 +33,7 @@ CHROMOSOMES = list(range(1, 23)) + ['X', 'Y']
 MOTIF_ORIENTATION = None
 
 
-def check_motif_orientation(input_bedpe: str, motif: str, reference: str, output: str) -> None:
-    """
-    Finds protein motif orientation in both ends of PET in bedpe file.
-
-    Parameters:
-        input_bedpe [str]: path to input bedpe file
-        motif [str]: path to file with protein motif (jaspar file)
-        reference [str]: path to reference genome (fasta file)
-        output [str]: path to output file
-
-    Returns:
-        None
-    """
+def check_motif_orientation(input_bedpe: str, motif: str, reference: str, output: str):
 
     bedpe = pd.read_csv(input_bedpe, header=None, sep='\t', names=BEDPE_COLS)
 
@@ -60,7 +63,8 @@ def check_motif_orientation(input_bedpe: str, motif: str, reference: str, output
 
         out_bedpe = pd.concat([out_bedpe, bedpe_chr], ignore_index=True)
 
-    out_bedpe.to_csv(output, sep='\t', index=False, header=False)
+    out_bedpe.to_csv(path_or_buf=output, sep='\t', index=False, header=False)
+    return None
 
 
 def read_fasta(fasta_path: str, chromosome: object) -> SeqRecord.SeqRecord:
@@ -125,9 +129,10 @@ def get_transform_function(motif_orientation):
 
 
 if __name__ == '__main__':
+    parsed_args = docopt(__doc__)
     check_motif_orientation(
-        input_bedpe='../../data/contacts/CTCF/GM12878.bedpe',
-        motif='../../data/motifs/MA0139.1.jaspar',
-        reference='../../data/reference/GRCh38_full_analysis_set_plus_decoy_hla.fa',
-        output='../../out.bedpe'
+        input_bedpe=parsed_args['<in_bedpe>'],
+        motif=parsed_args['<in_motif>'],
+        reference=parsed_args['<in_ref>'],
+        output=parsed_args['<out_bedpe>']
     )
