@@ -11,14 +11,14 @@ Options:
 """
 
 
+import logging
 import multiprocessing
 
 import dask.dataframe
-from docopt import docopt
 import numpy as np
 import pandas as pd
 from Bio import SeqIO, motifs, SeqRecord
-
+from docopt import docopt
 
 BEDPE_COLS = [
     'chrom1', 'start1', 'end1', 'chrom2', 'start2', 'end2', 'count'
@@ -40,7 +40,7 @@ def check_motif_orientation(input_bedpe: str, motif: str, reference: str, output
     out_bedpe = pd.DataFrame()
 
     for chr_name in CHROMOSOMES:
-        print(f'[INFO] Running chromosome {chr_name}...')
+        logging.info(f'Running chromosome {chr_name}...')
         file_fa = read_fasta(reference, chr_name)
         seq = file_fa.seq
         motif_orientation = get_motif_orientation(motif, chr_name, seq)

@@ -4,10 +4,8 @@
 #  Chromatin Knots  #
 #####################
 
-cKNOTs is a program that allows user to find
-links in chromatin. It takes .bedpe files
-as an input and outputs files containing
-information about localizations of links.
+cKNOTs is a program that allows user to find links in chromatin. It takes .bedpe files
+as an input and outputs files containing information about localizations of links.
 
 Usage:
     cknots.py run (local|slurm) <in_bedpe> <in_ccd> <out_dir>
@@ -18,10 +16,18 @@ Usage:
 Options:
     -h --help     Show this help message.
 """
+import datetime
+import logging
+from docopt import docopt
 
 from cknots.cknots import run_local, run_slurm
 from cknots.preprocessing import motif_orientation, pet_filter
-from docopt import docopt
+
+time_now_str = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+log_filename = f'cknots_{time_now_str}.log'
+logging.basicConfig(filename=log_filename,
+                    level=logging.INFO,
+                    format='%(asctime)s: [%(levelname)s]: %(message)s')
 
 
 def main(arguments):
@@ -58,10 +64,11 @@ def preprocess(arguments):
         pet_filter.filter_by_pet_count(
             input_bedpe=arguments['<in_bedpe>'],
             output=arguments['<out_bedpe>'],
-            min_pet_count=arguments['<min_pet_count>']
+            min_pet_count=int(arguments['<min_pet_count>'])
         )
 
 
 if __name__ == "__main__":
     parsed_args = docopt(__doc__)
+    logging.info(f'cKNOTs started.')
     main(parsed_args)

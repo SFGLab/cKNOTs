@@ -13,11 +13,12 @@ Options:
 
 from tqdm import tqdm
 from docopt import docopt
+import logging
 
 
 def filter_by_pet_count(input_bedpe: str, output: str, min_pet_count: int) -> None:
     in_file_length = count_lines(input_bedpe)
-    print(f'[INFO] Processing interactions file of {in_file_length} lines.')
+    logging.info(f'Processing interactions file of {in_file_length} lines.')
     out_file_length = 0
     with open(input_bedpe, 'r') as f_in:
         with open(output, 'w+') as f_out:
@@ -26,8 +27,8 @@ def filter_by_pet_count(input_bedpe: str, output: str, min_pet_count: int) -> No
                 if pet_count >= min_pet_count:
                     f_out.write(line)
                     out_file_length += 1
-    print(f'[INFO] Saved interactions file of {out_file_length} lines.')
-    print('[INFO] Finished.')
+    logging.info(f'Saved interactions file of {out_file_length} lines.')
+    logging.info('Filtering finished.')
     return None
 
 
@@ -44,5 +45,5 @@ if __name__ == '__main__':
     filter_by_pet_count(
         input_bedpe=parsed_args['<in_bedpe>'],
         output=parsed_args['<out_bedpe>'],
-        min_pet_count=parsed_args['<min_pet_count>']
+        min_pet_count=int(parsed_args['<min_pet_count>'])
     )
