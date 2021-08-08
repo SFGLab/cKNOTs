@@ -52,8 +52,7 @@ class ComputationScheduler:
                          '-d', f'{self.in_ccd}']
 
             subprocess.run(
-                input_cmd,
-                timeout=self.ccd_timeout
+                input_cmd
             )
 
             ccd_files_current_path = os.path.split(self.in_bedpe)[0]
@@ -83,10 +82,17 @@ class ComputationScheduler:
             logging.info(f'Running minor finder on {file_path}')
 
             input_cmd = [self.minor_finding_algorithm, '-c', '-f', f'{file_path}', '-o', f'{file_path}.raw_minors']
-            subprocess.run(
-                input_cmd,
-                timeout=self.ccd_timeout
-            )
 
-            logging.info(f'Finished processing {file_path}')
+            try:
+                subprocess.run(
+                    input_cmd,
+                    timeout=self.ccd_timeout
+                )
+                computation_finished = True
+                logging.info(f'Finished processing {file_path}')
+
+            except subprocess.TimeoutExpired:
+                computation_finished = False
+                logging.warning(f'Timeout expired on {file_path}')
+
         # todo: json file with results description
