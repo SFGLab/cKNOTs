@@ -23,14 +23,14 @@ Options:
     -h --help     Show this help message.
 ```
 
-- `cknots.py run` Run the minor finding algorithm.
-    - `(local|slurm)` Select if you want to run the algorithm locally on distribute it on Slurm cluster. 
+- `cknots.py run`: Run the minor finding algorithm.
+    - `(local|slurm)` Select if the algorithm should be run locally or distribute it by chromosome on Slurm cluster. 
     - `<in_bedpe>` Path to the `.bedpe` file containing information about contacts.
     - `<in_ccd>` Path to the `.bed` file containing information about CCDs.
     - `<out_dir>` Path to the output directory. The directory should not exist, it will be created by the program.
 
     
-- `cknots.py preprocess orientation` Creates a new `.bedpe` file with two new columns containing
+- `cknots.py preprocess orientation`: Create a new `.bedpe` file with two new columns containing
   motif orientation for first and second locus of contact. 
     - `<in_bedpe>` Path to the `.bedpe` file containing information about contacts.
     - `<in_motif>` Path to the `.jaspar` file containing motif.
@@ -38,7 +38,7 @@ Options:
     - `<out_bedpe>` Path to the output `.bedpe` file.
     
 
-- `cknots.py preprocess pet_filter` Creates a new `.bedpe` file in which rows with PET count smaller
+- `cknots.py preprocess pet_filter`: Create a new `.bedpe` file in which rows with PET count smaller
   than `<min_pet_count>` are filtered out. 
     - `<in_bedpe>` Path to the `.bedpe` file containing information about contacts.
     - `<out_bedpe>` Path to the output `.bedpe` file.
