@@ -5,6 +5,7 @@ def run(in_bedpe, in_ccd, out_dir,
         ccd_timeout=6 * 60 * 60,
         minor_finding_algorithm='find-k6-linear',
         splitting_algorithm='splitter'):
+
     scheduler = ComputationScheduler(
         in_bedpe=in_bedpe,
         in_ccd=in_ccd,

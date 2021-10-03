@@ -8,13 +8,13 @@ class ComputationScheduler:
                  ccd_timeout=6 * 60 * 60,
                  minor_finding_algorithm='find-k6-linear',
                  splitting_algorithm='splitter'):
-
+        print(os.getcwd())
         self.in_bedpe = in_bedpe
         self.in_ccd = in_ccd
         self.out_dir = out_dir
         self.ccd_timeout = ccd_timeout
-        self.minor_finding_algorithm = minor_finding_algorithm
-        self.splitting_algorithm = splitting_algorithm
+        self.minor_finding_algorithm = self._get_bin_path(minor_finding_algorithm)
+        self.splitting_algorithm = self._get_bin_path(splitting_algorithm)
 
         self.ccd_dirs = []  # filled in in self._run_splitter()
 
@@ -58,7 +58,7 @@ class ComputationScheduler:
             ccd_files_current_path = os.path.split(self.in_bedpe)[0]
             ccd_files_destination_path = os.path.join(self.out_dir, f'chr_{chromosome_name}')
 
-            files_to_move = [x for x in ccd_files_current_path if x.endswith('.mp')]
+            files_to_move = [x for x in os.listdir(ccd_files_current_path) if x.endswith('.mp')]
             os.makedirs(
                 ccd_files_destination_path
             )
@@ -96,3 +96,7 @@ class ComputationScheduler:
                 logging.warning(f'Timeout expired on {file_path}')
 
         # todo: json file with results description
+
+    @staticmethod
+    def _get_bin_path(algorithm_name):
+        return f'cknots/cpp/bin/{algorithm_name}'

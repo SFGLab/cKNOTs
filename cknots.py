@@ -8,7 +8,7 @@ cKNOTs is a program that allows user to find links in chromatin. It takes .bedpe
 as an input and outputs files containing information about localizations of links.
 
 Usage:
-    cknots.py run (local|slurm) <in_bedpe> <in_ccd> <out_dir>
+    cknots.py run docker <in_bedpe> <in_ccd> <out_dir> [timeout]
     cknots.py preprocess orientation <in_bedpe> <in_motif> <in_ref> <out_bedpe>
     cknots.py preprocess pet_filter <in_bedpe> <out_bedpe> <min_pet_count>
     cknots.py (-h | --help)
@@ -18,16 +18,8 @@ Options:
 """
 import datetime
 import logging
+import os
 from docopt import docopt
-
-from cknots.cknots import run_local, run_slurm
-from cknots.preprocessing import motif_orientation, pet_filter
-
-time_now_str = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-log_filename = f'cknots_{time_now_str}.log'
-logging.basicConfig(filename=log_filename,
-                    level=logging.INFO,
-                    format='%(asctime)s: [%(levelname)s]: %(message)s')
 
 
 def main(arguments):
@@ -38,14 +30,9 @@ def main(arguments):
 
 
 def run(arguments):
-    if arguments['slurm']:
-        run_slurm.run(
-            in_bedpe=arguments['<in_bedpe>'],
-            in_ccd=arguments['<in_ccd>'],
-            out_dir=arguments['<out_dir>']
-        )
-    elif arguments['local']:
-        run_local.run(
+    from cknots.cknots import run_docker
+    if arguments['docker']:
+        run_docker.run(
             in_bedpe=arguments['<in_bedpe>'],
             in_ccd=arguments['<in_ccd>'],
             out_dir=arguments['<out_dir>']
@@ -53,6 +40,8 @@ def run(arguments):
 
 
 def preprocess(arguments):
+    from cknots.preprocessing import motif_orientation, pet_filter
+
     if arguments['orientation']:
         motif_orientation.check_motif_orientation(
             input_bedpe=arguments['<in_bedpe>'],
@@ -70,5 +59,12 @@ def preprocess(arguments):
 
 if __name__ == "__main__":
     parsed_args = docopt(__doc__)
+
+    time_now_str = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    log_filename = os.path.join(parsed_args['<out_dir>'], f'cknots_{time_now_str}.log')
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s: [%(levelname)s]: %(message)s')
+
     logging.info(f'cKNOTs started.')
+
     main(parsed_args)
