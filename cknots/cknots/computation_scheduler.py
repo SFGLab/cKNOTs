@@ -4,14 +4,27 @@ import logging
 
 
 class ComputationScheduler:
-    def __init__(self, in_bedpe, in_ccd, out_dir,
+
+    def __init__(self, in_bedpe, in_ccd, out_dir, chromosome,
                  ccd_timeout=6 * 60 * 60,
                  minor_finding_algorithm='find-k6-linear',
                  splitting_algorithm='splitter'):
-        print(os.getcwd())
+        """
+        Class for scheaduling running of knot finding algorithm.
+
+        :param in_bedpe: path to bedpe file
+        :param in_ccd: path to ccd file
+        :param out_dir: path to *non-existing* directory with results
+        :param chromosome: chromosome (1-23 or -1 for all) to process
+        :param ccd_timeout: time (seconds) for timeout of single ccd
+        :param minor_finding_algorithm: name of minor finding algorithm
+        :param splitting_algorithm: name of splitting algorithm
+        """
+
         self.in_bedpe = in_bedpe
         self.in_ccd = in_ccd
         self.out_dir = out_dir
+        self.chromosome = chromosome
         self.ccd_timeout = ccd_timeout
         self.minor_finding_algorithm = self._get_bin_path(minor_finding_algorithm)
         self.splitting_algorithm = self._get_bin_path(splitting_algorithm)
@@ -21,6 +34,12 @@ class ComputationScheduler:
         logging.info('Computation scheduler created.')
 
     def run(self):
+        """
+        Run computations. Creates directory with results, splits input files
+        and running minor finder on each CCD (for each chromosome, if running
+        on more than one).
+        :return: None
+        """
         logging.info(f'Looking for minors in {self.in_bedpe} with CCDs defined in {self.in_ccd}')
 
         self._create_results_dir()
@@ -40,7 +59,16 @@ class ComputationScheduler:
     def _run_splitter(self):
         logging.info('Running splitter')
 
-        for chromosome in list(range(1, 24)):
+        if self.chromosome in range(1, 24):
+            chromosmes_to_process = [self.chromosome]
+        elif self.chromosome == -1:
+            chromosmes_to_process = list(range(1, 24))
+        else:
+            error_message = f'Invalid chromosome value: {self.chromosome}.'
+            logging.error(error_message)
+            raise ValueError(error_message)
+
+        for chromosome in chromosmes_to_process:
 
             chromosome_name = f"{chromosome:02d}" if chromosome != 23 else 'X'
             logging.info(f'Running splitter on chromosome {chromosome_name}')

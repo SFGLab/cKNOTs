@@ -6,6 +6,8 @@ ENV BIN_PATH '/cknots-app/cknots/cpp/bin/'
 
 COPY requirements.txt /cknots-app/requirements.txt
 COPY cknots /cknots-app/cknots
+COPY cknots.py /cknots-app/cknots.py
+COPY docker_cknots.sh /cknots-app/docker_cknots.sh
 
 WORKDIR /cknots-app
 SHELL ["/bin/bash", "-c"]
@@ -46,12 +48,6 @@ RUN cmake $MINOR_FINDER_PATH \
 	&& rm cmake_install.cmake \
 	&& rm Makefile \
 	&& rm -r CMakeFiles
-
-
-
-COPY cknots.py /cknots-app/cknots.py
-COPY docker_cknots.sh /cknots-app/docker_cknots.sh
-COPY test.py /cknots-app/test.py
 
 RUN chmod +x docker_cknots.sh
 

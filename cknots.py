@@ -8,7 +8,7 @@ cKNOTs is a program that allows user to find links in chromatin. It takes .bedpe
 as an input and outputs files containing information about localizations of links.
 
 Usage:
-    cknots.py run docker <in_bedpe> <in_ccd> <out_dir> [timeout]
+    cknots.py run docker <in_bedpe> <in_ccd> <out_dir> <chromosome> [timeout]
     cknots.py preprocess orientation <in_bedpe> <in_motif> <in_ref> <out_bedpe>
     cknots.py preprocess pet_filter <in_bedpe> <out_bedpe> <min_pet_count>
     cknots.py (-h | --help)
@@ -32,11 +32,21 @@ def main(arguments):
 def run(arguments):
     from cknots.cknots import run_docker
     if arguments['docker']:
-        run_docker.run(
-            in_bedpe=arguments['<in_bedpe>'],
-            in_ccd=arguments['<in_ccd>'],
-            out_dir=arguments['<out_dir>']
-        )
+        if arguments['[timeout]']:
+            run_docker.run(
+                in_bedpe=arguments['<in_bedpe>'],
+                in_ccd=arguments['<in_ccd>'],
+                out_dir=arguments['<out_dir>'],
+                chromosome=arguments['<chromosome>'],
+                ccd_timeout=arguments['[timeout]']
+            )
+        else:
+            run_docker.run(
+                in_bedpe=arguments['<in_bedpe>'],
+                in_ccd=arguments['<in_ccd>'],
+                out_dir=arguments['<out_dir>'],
+                chromosome=arguments['<chromosome>']
+            )
 
 
 def preprocess(arguments):
