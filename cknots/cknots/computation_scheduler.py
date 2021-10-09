@@ -105,7 +105,7 @@ class ComputationScheduler:
         ccds_to_analyze = [x for x in os.listdir(ccd_dir_path) if x.endswith('.mp')]
 
         for ccd in ccds_to_analyze:
-            file_path = os.path.join(self.out_dir, ccd)
+            file_path = os.path.join(ccd_dir_path, ccd)
 
             logging.info(f'Running minor finder on {file_path}')
 

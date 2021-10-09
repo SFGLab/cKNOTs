@@ -71,9 +71,16 @@ if __name__ == "__main__":
     parsed_args = docopt(__doc__)
 
     time_now_str = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    log_filename = os.path.join(parsed_args['<out_dir>'], f'cknots_{time_now_str}.log')
-    logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s: [%(levelname)s]: %(message)s')
+    log_filename = os.path.join(f'cknots_{time_now_str}.log')
+
+    if parsed_args['run']:
+        log_filename = os.path.join(
+            os.path.split(parsed_args['<out_dir>'])[0],
+            f'cknots_{time_now_str}.log')
+
+    logging.basicConfig(filename=log_filename,
+                        level=logging.INFO,
+                        format='%(asctime)s [%(levelname)s]: %(message)s')
 
     logging.info(f'cKNOTs started.')
 
