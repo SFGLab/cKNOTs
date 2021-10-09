@@ -4,7 +4,7 @@ ENV SPLITTER_PATH '/cknots-app/cknots/cpp/src/splitter/'
 ENV MINOR_FINDER_PATH '/cknots-app/cknots/cpp/src/minor-finder/'
 ENV BIN_PATH '/cknots-app/cknots/cpp/bin/'
 
-COPY requirements.txt /cknots-app/requirements.txt
+COPY requirements_docker.txt /cknots-app/requirements.txt
 COPY cknots /cknots-app/cknots
 COPY cknots.py /cknots-app/cknots.py
 COPY docker_cknots.sh /cknots-app/docker_cknots.sh
