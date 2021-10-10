@@ -12,7 +12,7 @@ from cknots.cknots.computation_scheduler import ComputationScheduler
 
 
 def run(in_bedpe, in_ccd, out_dir, chromosome,
-        ccd_timeout=6 * 60 * 60,
+        ccd_timeout=6 * 60 * 60,  # 6 hours
         minor_finding_algorithm='find-k6-linear',
         splitting_algorithm='splitter'):
 

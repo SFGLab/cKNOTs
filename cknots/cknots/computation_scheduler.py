@@ -24,8 +24,8 @@ class ComputationScheduler:
         self.in_bedpe = in_bedpe
         self.in_ccd = in_ccd
         self.out_dir = out_dir
-        self.chromosome = chromosome
-        self.ccd_timeout = ccd_timeout
+        self.chromosome = int(chromosome)
+        self.ccd_timeout = int(ccd_timeout)
         self.minor_finding_algorithm = self._get_bin_path(minor_finding_algorithm)
         self.splitting_algorithm = self._get_bin_path(splitting_algorithm)
 
@@ -35,26 +35,16 @@ class ComputationScheduler:
 
     def run(self):
         """
-        Run computations. Creates directory with results, splits input files
-        and running minor finder on each CCD (for each chromosome, if running
-        on more than one).
+        Run computations. Splits input files and runs minor finder
+        on each CCD (for each chromosome, if running on more than one).
         :return: None
         """
         logging.info(f'Looking for minors in {self.in_bedpe} with CCDs defined in {self.in_ccd}')
 
-        self._create_results_dir()
         self._run_splitter()
 
         for ccd_dir in self.ccd_dirs:
             self._run_minor_finder(ccd_dir)
-
-    def _create_results_dir(self):
-        if os.path.exists(self.out_dir):
-            raise FileExistsError(f'Directory {self.out_dir} already exists. Remove it before proceeding.')
-        else:
-            os.makedirs(self.out_dir)
-            results_absolute_path = os.path.abspath(self.out_dir)
-            logging.info(f'Directory with results created: {results_absolute_path}')
 
     def _run_splitter(self):
         logging.info('Running splitter')
@@ -87,9 +77,15 @@ class ComputationScheduler:
             ccd_files_destination_path = os.path.join(self.out_dir, f'chr_{chromosome_name}')
 
             files_to_move = [x for x in os.listdir(ccd_files_current_path) if x.endswith('.mp')]
-            os.makedirs(
-                ccd_files_destination_path
-            )
+
+            try:
+                os.makedirs(
+                    ccd_files_destination_path
+                )
+            except FileExistsError as e:
+                logging.critical(f'Directory {ccd_files_destination_path} already exists. '
+                                 + 'Remove it before proceeding.')
+                raise e
 
             for file in files_to_move:
                 os.rename(
@@ -106,22 +102,38 @@ class ComputationScheduler:
 
         for ccd in ccds_to_analyze:
             file_path = os.path.join(ccd_dir_path, ccd)
+            file_name = os.path.split(file_path)[-1]
+
+            result_path = f'{file_path}.raw_minors'
 
             logging.info(f'Running minor finder on {file_path}')
 
             input_cmd = [self.minor_finding_algorithm, '-c', '-f', f'{file_path}', '-o', f'{file_path}.raw_minors']
 
+            computation_finished = False
+
             try:
-                subprocess.run(
+                result = subprocess.run(
                     input_cmd,
                     timeout=self.ccd_timeout
                 )
-                computation_finished = True
-                logging.info(f'Finished processing {file_path}')
+
+                if result.returncode == 0:
+                    computation_finished = True
+                    logging.info(f'{file_name} processing finished')
+                else:
+                    if os.path.exists(result_path):
+                        logging.warning(f'{file_name} processing ended with and error, but result file exists. '
+                                        + f'Return code: {result.returncode}')
+                    else:
+                        logging.error(f'{file_name} processing ended with and error, and result file does not exist. '
+                                      + f'Return code: {result.returncode}')
 
             except subprocess.TimeoutExpired:
-                computation_finished = False
-                logging.warning(f'Timeout expired on {file_path}')
+                logging.error(f'Timeout expired on {file_path}')
+
+            except Exception as other_exception:
+                logging.error(f'Exception occurred {other_exception}')
 
         # todo: json file with results description
 
