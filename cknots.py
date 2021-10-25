@@ -16,7 +16,6 @@ Usage:
 Options:
     -h --help     Show this help message.
 """
-import datetime
 import logging
 import os
 from docopt import docopt
@@ -42,27 +41,25 @@ def run(arguments):
 
 
 def create_results_dir(out_dir):
-
     out_dir_abs_path = os.path.abspath(out_dir)
 
     try:
         os.makedirs(out_dir)
-        message = {
+        msg = {
             'level': 'info',
             'content': f'Directory with results created at {out_dir_abs_path}'
         }
 
     except FileExistsError:
-        message = {
+        msg = {
             'level': 'warning',
             'content': f'Directory with results already exists {out_dir_abs_path}'
         }
 
-    return out_dir_abs_path, message
+    return out_dir_abs_path, msg
 
 
 def set_up_logger(chromosome):
-
     log_filename = os.path.join(
         parsed_args['<out_dir>'],
         f'cknots_{chromosome}.log'
@@ -71,6 +68,17 @@ def set_up_logger(chromosome):
     logging.basicConfig(filename=log_filename,
                         level=logging.INFO,
                         format='%(asctime)s [%(levelname)s] %(message)s')
+
+
+def check_arg(args, arg_name):
+    file_path = args[arg_name]
+
+    if os.path.exists(file_path):
+        logging.info(f"File {arg_name} exists at {file_path}")
+    else:
+        msg = f"File {arg_name} does not exist at {file_path}"
+        logging.critical(msg)
+        raise FileNotFoundError(msg)
 
 
 if __name__ == "__main__":
@@ -99,5 +107,8 @@ if __name__ == "__main__":
         logging.info(result_dir_message['content'])
     elif result_dir_message['level'] == 'warning':
         logging.warning(result_dir_message['content'])
+
+    check_arg(parsed_args, '<in_ccd>')
+    check_arg(parsed_args, '<in_bedpe>')
 
     run(parsed_args)
