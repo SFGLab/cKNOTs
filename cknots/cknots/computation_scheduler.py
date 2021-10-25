@@ -1,6 +1,9 @@
+import json
 import os
 import subprocess
 import logging
+
+import pandas as pd
 
 
 class ComputationScheduler:
@@ -50,15 +53,15 @@ class ComputationScheduler:
         logging.info('Running splitter')
 
         if self.chromosome in range(1, 24):
-            chromosmes_to_process = [self.chromosome]
+            chromosomes_to_process = [self.chromosome]
         elif self.chromosome == -1:
-            chromosmes_to_process = list(range(1, 24))
+            chromosomes_to_process = list(range(1, 24))
         else:
             error_message = f'Invalid chromosome value: {self.chromosome}.'
             logging.error(error_message)
             raise ValueError(error_message)
 
-        for chromosome in chromosmes_to_process:
+        for chromosome in chromosomes_to_process:
 
             chromosome_name = f"{chromosome:02d}" if chromosome != 23 else 'X'
             logging.info(f'Running splitter on chromosome {chromosome_name}')
@@ -82,10 +85,11 @@ class ComputationScheduler:
                 os.makedirs(
                     ccd_files_destination_path
                 )
-            except FileExistsError as e:
-                logging.critical(f'Directory {ccd_files_destination_path} already exists. '
-                                 + 'Remove it before proceeding.')
-                raise e
+            except FileExistsError:
+                message = f'Directory {ccd_files_destination_path} already exists. ' \
+                          + 'Remove it before proceeding.'
+                logging.critical(message)
+                raise FileExistsError(message)
 
             for file in files_to_move:
                 os.rename(
@@ -100,7 +104,38 @@ class ComputationScheduler:
     def _run_minor_finder(self, ccd_dir_path):
         ccds_to_analyze = [x for x in os.listdir(ccd_dir_path) if x.endswith('.mp')]
 
+        chromosome_results = []
+
+        all_ccds = pd.read_csv(self.in_ccd,
+                               sep='\t',
+                               header=None,
+                               names=['chromosome', 'start', 'end'])
+
+        csv_chr_name = str(os.path.split(ccd_dir_path)[-1]) \
+            .replace('_0', '') \
+            .replace('_', '')
+
+        relevant_ccds_iterator = all_ccds[all_ccds['chromosome'] == csv_chr_name].iterrows()
+
         for ccd in ccds_to_analyze:
+
+            try:
+                _, ccd_info = next(relevant_ccds_iterator)
+                ccd_start = ccd_info['start']
+                ccd_end = ccd_info['end']
+            except StopIteration:
+                continue
+
+            ccd_results = {
+                'filename': str(ccd),
+                'results_exist': False,
+                'result_not_empty': False,
+                'results_path': None,
+                'return_code': None,
+                'ccd_start': ccd_start,
+                'ccd_end': ccd_end
+            }
+
             file_path = os.path.join(ccd_dir_path, ccd)
             file_name = os.path.split(file_path)[-1]
 
@@ -110,16 +145,17 @@ class ComputationScheduler:
 
             input_cmd = [self.minor_finding_algorithm, '-c', '-f', f'{file_path}', '-o', f'{file_path}.raw_minors']
 
-            computation_finished = False
-
             try:
                 result = subprocess.run(
                     input_cmd,
                     timeout=self.ccd_timeout
                 )
 
+                ccd_results['results_exist'] = True
+                ccd_results['results_path'] = result_path
+                ccd_results['return_code'] = result.returncode
+
                 if result.returncode == 0:
-                    computation_finished = True
                     logging.info(f'{file_name} processing finished')
                 else:
                     if os.path.exists(result_path):
@@ -128,14 +164,28 @@ class ComputationScheduler:
                     else:
                         logging.error(f'{file_name} processing ended with and error, and result file does not exist. '
                                       + f'Return code: {result.returncode}')
+                        ccd_results['results_exist'] = False
+                        ccd_results['results_path'] = ''
 
             except subprocess.TimeoutExpired:
                 logging.error(f'Timeout expired on {file_path}')
+                ccd_results['results_exist'] = False
+                ccd_results['results_path'] = ''
+                ccd_results['return_code'] = 124
 
             except Exception as other_exception:
                 logging.error(f'Exception occurred {other_exception}')
+                ccd_results['results_exist'] = False
+                ccd_results['results_path'] = ''
+                ccd_results['return_code'] = 1
 
-        # todo: json file with results description
+            if os.path.exists(result_path) and os.stat(result_path).st_size > 0:
+                ccd_results['result_not_empty'] = True
+
+            chromosome_results.append(ccd_results)
+
+        with open(os.path.join(ccd_dir_path, 'results.json'), 'w') as f:
+            json.dump(chromosome_results, f, indent=4, sort_keys=True)
 
     @staticmethod
     def _get_bin_path(algorithm_name):
