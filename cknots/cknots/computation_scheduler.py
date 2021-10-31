@@ -127,10 +127,10 @@ class ComputationScheduler:
                 continue
 
             ccd_results = {
-                'filename': str(ccd),
+                'input_filename': str(ccd),
                 'results_exist': False,
-                'result_not_empty': False,
-                'results_path': None,
+                'results_not_empty': False,
+                'results_filename': None,
                 'return_code': None,
                 'ccd_start': ccd_start,
                 'ccd_end': ccd_end
@@ -152,7 +152,7 @@ class ComputationScheduler:
                 )
 
                 ccd_results['results_exist'] = True
-                ccd_results['results_path'] = result_path
+                ccd_results['results_filename'] = os.path.split(result_path)[-1]
                 ccd_results['return_code'] = result.returncode
 
                 if result.returncode == 0:
@@ -165,22 +165,22 @@ class ComputationScheduler:
                         logging.error(f'{file_name} processing ended with and error, and result file does not exist. '
                                       + f'Return code: {result.returncode}')
                         ccd_results['results_exist'] = False
-                        ccd_results['results_path'] = ''
+                        ccd_results['results_filename'] = ''
 
             except subprocess.TimeoutExpired:
                 logging.error(f'Timeout expired on {file_path}')
                 ccd_results['results_exist'] = False
-                ccd_results['results_path'] = ''
+                ccd_results['results_filename'] = ''
                 ccd_results['return_code'] = 124
 
             except Exception as other_exception:
                 logging.error(f'Exception occurred {other_exception}')
                 ccd_results['results_exist'] = False
-                ccd_results['results_path'] = ''
+                ccd_results['results_filename'] = ''
                 ccd_results['return_code'] = 1
 
             if os.path.exists(result_path) and os.stat(result_path).st_size > 0:
-                ccd_results['result_not_empty'] = True
+                ccd_results['results_not_empty'] = True
 
             chromosome_results.append(ccd_results)
 

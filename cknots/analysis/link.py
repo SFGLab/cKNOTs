@@ -25,7 +25,7 @@ class Endpoint:
         return f"[{self.start},{self.end}]"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Link:
     endpoints: List[Endpoint]
     edges: List[Edge]
@@ -56,7 +56,7 @@ class Link:
                                edge_color='red',
                                arrows=True,
                                width=2,
-                               arrowsize=24)
+                               arrowsize=30)
 
         nx.draw_networkx_edges(g,
                                pos=nx.circular_layout(g),
@@ -94,9 +94,10 @@ def parse_links_from_string(raw_minor_text: str) -> List[Link]:
         endpoints = __get_endpoints(minor_text[minor_text.find('endpoints'):minor_text.find('edges')])
         edges = __get_edges(minor_text[minor_text.find('edges'):])
 
-        links.append(
-            Link(endpoints, edges)
-        )
+        if len(endpoints) > 0 and len(edges) > 0:
+            links.append(
+                Link(endpoints, edges)
+            )
 
     return links
 
