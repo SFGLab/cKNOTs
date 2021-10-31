@@ -24,13 +24,13 @@ class Chromosome:
             link_count += len(ccd.links)
         return link_count
 
-    def load_from_file(self, path, chromosome_number=None):
+    def load_from_file(self, path, name=None):
         """
         path: path to directory with cKNOTs results for given chromosome.
         chromosome_number: 1 to 22 or 'X' or 'Y'
         """
 
-        if chromosome_number is None:
+        if name is None:
             regex_groups = re.findall('chr_(\d+|X|Y)', path)
             if len(regex_groups) > 0:
                 if regex_groups[-1] in ('X', 'Y'):
@@ -43,7 +43,7 @@ class Chromosome:
             else:
                 raise ValueError('Cannot extract chromosome name from path. Please specify chromosome_number argument.')
         else:
-            self.name = num_to_chromosome(chromosome_number)
+            self.name = str(name)
 
         with open(os.path.join(path, 'results.json')) as f:
             results_data = json.load(f)
