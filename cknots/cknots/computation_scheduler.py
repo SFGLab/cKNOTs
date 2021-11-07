@@ -102,7 +102,7 @@ class ComputationScheduler:
         logging.info('Bedpe file split into CCDs and divided into folders in results directory.')
 
     def _run_minor_finder(self, ccd_dir_path):
-        ccds_to_analyze = [x for x in os.listdir(ccd_dir_path) if x.endswith('.mp')]
+        ccds_to_analyze = sorted([x for x in os.listdir(ccd_dir_path) if x.endswith('.mp')])
 
         chromosome_results = []
 
