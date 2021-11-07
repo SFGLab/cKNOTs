@@ -16,9 +16,9 @@ pet_filter
     only contacts that have minimum <min_pet_count> PET count.
 
 Usage:
-    cknots_preprocessing.py orientation <in_bedpe> <in_motif> <in_ref> <out_bedpe>
-    cknots_preprocessing.py pet_filter <in_bedpe> <out_bedpe> <min_pet_count>
-    cknots_preprocessing.py (-h | --help)
+    preprocessing_cknots.py orientation <in_bedpe> <in_motif> <in_ref> <out_bedpe>
+    preprocessing_cknots.py pet_filter <in_bedpe> <out_bedpe> <min_pet_count>
+    preprocessing_cknots.py (-h | --help)
 
 Options:
     -h --help     Show this help message.
