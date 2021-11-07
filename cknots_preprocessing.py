@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(filename=log_filename,
                         level=logging.INFO,
-                        format='%[%(levelname)s] (asctime)s %(message)s')
+                        format='%(asctime)s [%(levelname)s] %(message)s')
 
     logging.info(f'cKNOTs preprocessing started.')
 
