@@ -34,6 +34,8 @@ class ComputationScheduler:
 
         self.ccd_dirs = []  # filled in in self._run_splitter()
 
+        self.resuming_computation = False
+
         logging.info('Computation scheduler created.')
 
     def run(self):
@@ -86,10 +88,9 @@ class ComputationScheduler:
                     ccd_files_destination_path
                 )
             except FileExistsError:
-                message = f'Directory {ccd_files_destination_path} already exists. ' \
-                          + 'Remove it before proceeding.'
-                logging.critical(message)
-                raise FileExistsError(message)
+                message = f'Directory {ccd_files_destination_path} already exists, resuming computation.'
+                logging.warning(message)
+                self.resuming_computation = True
 
             for file in files_to_move:
                 os.rename(
@@ -105,6 +106,9 @@ class ComputationScheduler:
         ccds_to_analyze = sorted([x for x in os.listdir(ccd_dir_path) if x.endswith('.mp')])
 
         chromosome_results = []
+        if self.resuming_computation:
+            with open(os.path.join(ccd_dir_path, 'results.json')) as f:
+                chromosome_results = json.load(f)
 
         all_ccds = pd.read_csv(self.in_ccd,
                                sep='\t',
@@ -117,7 +121,7 @@ class ComputationScheduler:
 
         relevant_ccds_iterator = all_ccds[all_ccds['chromosome'] == csv_chr_name].iterrows()
 
-        for ccd in ccds_to_analyze:
+        for i, ccd in enumerate(ccds_to_analyze):
 
             try:
                 _, ccd_info = next(relevant_ccds_iterator)
@@ -140,6 +144,10 @@ class ComputationScheduler:
             file_name = os.path.split(file_path)[-1]
 
             result_path = f'{file_path}.raw_minors'
+
+            if self.resuming_computation and os.path.exists(result_path):
+                logging.info(f'Results for {file_path} already exists, skipping')
+                continue
 
             logging.info(f'Running minor finder on {file_path}')
 
@@ -182,7 +190,13 @@ class ComputationScheduler:
             if os.path.exists(result_path) and os.stat(result_path).st_size > 0:
                 ccd_results['results_not_empty'] = True
 
-            chromosome_results.append(ccd_results)
+            if self.resuming_computation:
+                chromosome_results[i] = ccd_results
+            else:
+                chromosome_results.append(ccd_results)
+
+            with open(os.path.join(ccd_dir_path, 'results.json'), 'w') as f:
+                json.dump(chromosome_results, f, indent=4, sort_keys=True)
 
         with open(os.path.join(ccd_dir_path, 'results.json'), 'w') as f:
             json.dump(chromosome_results, f, indent=4, sort_keys=True)
