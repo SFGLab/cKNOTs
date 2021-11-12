@@ -107,8 +107,14 @@ class ComputationScheduler:
 
         chromosome_results = []
         if self.resuming_computation:
+            chromosome_results = [None] * len(ccds_to_analyze)
+
             with open(os.path.join(ccd_dir_path, 'results.json')) as f:
-                chromosome_results = json.load(f)
+                previous_results = json.load(f)
+
+            for results_for_ccd in previous_results:
+                idx = int(results_for_ccd['input_filename'][-7:-3]) - 1
+                chromosome_results[idx] = results_for_ccd
 
         all_ccds = pd.read_csv(self.in_ccd,
                                sep='\t',
