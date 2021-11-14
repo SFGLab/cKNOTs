@@ -104,9 +104,14 @@ class ComputationScheduler:
     def _run_minor_finder(self, ccd_dir_path):
         ccds_to_analyze = sorted([x for x in os.listdir(ccd_dir_path) if x.endswith('.mp')])
 
+        all_ccds = pd.read_csv(self.in_ccd,
+                               sep='\t',
+                               header=None,
+                               names=['chromosome', 'start', 'end'])
+
         chromosome_results = []
         if self.resuming_computation:
-            chromosome_results = [None] * len(ccds_to_analyze)
+            chromosome_results = [None] * len(all_ccds)
 
             with open(os.path.join(ccd_dir_path, 'results.json')) as f:
                 previous_results = json.load(f)
@@ -114,11 +119,6 @@ class ComputationScheduler:
             for results_for_ccd in previous_results:
                 idx = int(results_for_ccd['input_filename'][-7:-3]) - 1
                 chromosome_results[idx] = results_for_ccd
-
-        all_ccds = pd.read_csv(self.in_ccd,
-                               sep='\t',
-                               header=None,
-                               names=['chromosome', 'start', 'end'])
 
         csv_chr_name = str(os.path.split(ccd_dir_path)[-1]) \
             .replace('_0', '') \
