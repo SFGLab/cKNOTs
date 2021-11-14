@@ -94,7 +94,7 @@ int chrom_from_chr(std::string st) {
 
 std::string pad_int(int a, int padding = 4) {
     char buffer [5];
-    std::sprintf(buffer, "_%04d", a);
+    std::sprintf(buffer, "%04d", a);
     std::string str(buffer);
     return str;
 }
@@ -446,7 +446,8 @@ void handle_file(std::string filename, int chromosome, bool split_ccd, std::stri
 
         for (auto &myedge :split_edges) {
             std::string fileNumber = pad_int(ccd_no);
-            export_to_file(myedge, filename + fileNumber + std::string(".mp"), chromosome);
+            std::string chrNumber = pad_int(chromosome);
+            export_to_file(myedge, filename + std::string(".") + fileNumber + std::string(".chr") + chrNumber + std::string(".mp"), chromosome);
             ccd_no++;
         }
     }

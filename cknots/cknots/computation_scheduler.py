@@ -52,7 +52,6 @@ class ComputationScheduler:
             self._run_minor_finder(ccd_dir)
 
     def _run_splitter(self):
-        logging.info('Running splitter')
 
         if self.chromosome in range(1, 24):
             chromosomes_to_process = [self.chromosome]
@@ -81,7 +80,7 @@ class ComputationScheduler:
             ccd_files_current_path = os.path.split(self.in_bedpe)[0]
             ccd_files_destination_path = os.path.join(self.out_dir, f'chr_{chromosome_name}')
 
-            files_to_move = [x for x in os.listdir(ccd_files_current_path) if x.endswith('.mp')]
+            files_to_move = [x for x in os.listdir(ccd_files_current_path) if x.endswith(f'chr{chromosome:04d}.mp')]
 
             try:
                 os.makedirs(
