@@ -20,13 +20,14 @@ from docopt import docopt
 from jinja2 import Template
 
 SBATCH_TEMPLATE = """#!/bin/bash
-#SBATCH --ntasks=2
+#SBATCH --ntasks=1
 #SBATCH --mem 60G
 #SBATCH --job-name="{{ job_name }}"
 #SBATCH --partition=medium
 
-srun  --container-mounts={{ data_path }}:/data \
---container-image=krzysztofspalinski/cknots:latest \
+srun --export=ENROOT_CONFIG_PATH \
+--container-mounts={{ data_path }}:/data \
+--container-image=/mnt/evafs/sfglab/home/kspalinski/cKNOTs/krzysztofspalinski+cknots+latest.sqsh \
 /cknots-app/docker_cknots.sh \
 {{ bedpe_path }} \
 {{ ccd_path }} \
@@ -37,11 +38,11 @@ srun  --container-mounts={{ data_path }}:/data \
 
 
 def run_slurm(arguments):
-    for chromosome_number in range(1, 24):
+    for chromosome_number in range(15, 24):
         timeout = arguments['timeout'] if arguments['timeout'] else ''
 
         script_to_run = create_sbatch_script(
-            data_path=os.path.abspath(arguments['<data_path>']),
+            data_path=arguments['<data_path>'],
             in_bedpe=arguments['<in_bedpe>'],
             in_ccd=arguments['<in_ccd>'],
             out_dir=arguments['<out_dir>'],
@@ -55,7 +56,6 @@ def run_slurm(arguments):
         subprocess.run(
             input_cmd
         )
-
         os.remove(script_to_run)
 
 
