@@ -1,11 +1,14 @@
 import json
 import os
 import re
+import shutil
+import warnings
 from dataclasses import dataclass, field
 from typing import List
 
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
+from tqdm import tqdm
 
 from cknots.analysis.ccd import CCD
 from cknots.analysis.link import Link
@@ -28,6 +31,27 @@ class Chromosome:
             link_count += len(ccd.links)
         return link_count
 
+    def remove_duplicate_links(self):
+        for ccd in self.ccds:
+            ccd.remove_duplicate_links()
+
+    def remove_similar_links(self, min_differences=1):
+        for ccd in tqdm(self.ccds, desc=f'Chromosome {self.name}'):
+            ccd.remove_similar_links(min_differences)
+
+    def save_to_path(self, name, path):
+        try:
+            os.makedirs(path)
+        except FileExistsError:
+            shutil.rmtree(path)
+            os.makedirs(path)
+            warnings.warn(f'Overwriting {path}')
+
+        for i, ccd in enumerate(self.ccds):
+            ccd.save_to_file(
+                os.path.join(path, f'{name}.{i:04d}.chr{self.name}.mp.raw_minors')
+            )
+
     def load_from_path(self, path, name=None):
         """
         path: path to directory with cKNOTs results for given chromosome.
@@ -39,7 +63,7 @@ class Chromosome:
             if len(regex_groups) > 0:
                 if regex_groups[-1] in ('X', 'Y'):
                     self.name = regex_groups[-1]
-                elif regex_groups[-1] in [str(x) for x in range(1, 23)]:
+                elif regex_groups[-1] in [f'{x:02d}' for x in range(1, 23)]:
                     self.name = str(int(regex_groups[-1]))
                 else:
                     raise ValueError(
@@ -57,9 +81,11 @@ class Chromosome:
 
             ccd = CCD(ccd_results['ccd_start'],
                       ccd_results['ccd_end'],
-                      int(ccd_results['input_filename'].replace('.mp', '')[-4:]))
+                      int(ccd_results['input_filename'].replace('.mp', '')[-12:-8]))
 
-            ccd.load_from_file(os.path.join(path, ccd_results['results_filename']))
+            if ccd_results['results_exist']:
+                ccd.load_from_file(os.path.join(path, ccd_results['results_filename']))
+
             self.ccds.append(ccd)
 
     def plot(self):
