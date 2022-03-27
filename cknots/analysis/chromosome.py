@@ -49,7 +49,7 @@ class Chromosome:
 
         for i, ccd in enumerate(self.ccds):
             ccd.save_to_file(
-                os.path.join(path, f'{name}.{i:04d}.chr{self.name}.mp.raw_minors')
+                os.path.join(path, f'{name}.{i+1:04d}.chr{self.name}.mp.raw_minors')
             )
 
     def load_from_path(self, path, name=None):

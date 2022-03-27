@@ -14,7 +14,15 @@ from cknots.cknots.computation_scheduler import ComputationScheduler
 def run(in_bedpe, in_ccd, out_dir, chromosome,
         ccd_timeout=6 * 60 * 60,  # 6 hours
         minor_finding_algorithm='find-k6-linear',
-        splitting_algorithm='splitter'):
+        splitting_algorithm='splitter'
+        ):
+
+    arguments = None
+
+    if minor_finding_algorithm == 'find-k6-linear':
+        arguments = ['-c']
+    if minor_finding_algorithm == 'find-knots':
+        arguments = ['-n', '6', '-N', '6', '-d', '5', '-e', '0']
 
     scheduler = ComputationScheduler(
         in_bedpe=in_bedpe,
@@ -23,7 +31,8 @@ def run(in_bedpe, in_ccd, out_dir, chromosome,
         chromosome=chromosome,
         ccd_timeout=ccd_timeout,
         minor_finding_algorithm=minor_finding_algorithm,
-        splitting_algorithm=splitting_algorithm
+        splitting_algorithm=splitting_algorithm,
+        arguments=arguments
     )
 
     scheduler.run()

@@ -50,3 +50,6 @@ RUN cmake $MINOR_FINDER_PATH \
 	&& rm -r CMakeFiles
 
 RUN chmod +x docker_cknots.sh
+
+
+WORKDIR /data

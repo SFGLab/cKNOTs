@@ -11,7 +11,7 @@ Chromosome should be an integer between 1-23 (23 is X chromosome) or -1 to run
 all chromosomes.
 
 Usage:
-    cknots.py <in_bedpe> <in_ccd> <out_dir> <chromosome> [timeout]
+    cknots.py <in_bedpe> <in_ccd> <out_dir> <chromosome> [--full] [timeout]
 
 Options:
     -h --help     Show this help message.
@@ -23,12 +23,18 @@ from cknots.cknots import run_docker
 
 
 def run(arguments):
+    if arguments['--full']:
+        splitting_algorithm = 'find-knots'
+    else:
+        splitting_algorithm = 'find-k6-linear'
+
     if arguments['timeout']:
         run_docker.run(
             in_bedpe=arguments['<in_bedpe>'],
             in_ccd=arguments['<in_ccd>'],
             out_dir=arguments['<out_dir>'],
             chromosome=arguments['<chromosome>'],
+            minor_finding_algorithm=splitting_algorithm,
             ccd_timeout=arguments['timeout']
         )
     else:
@@ -36,6 +42,7 @@ def run(arguments):
             in_bedpe=arguments['<in_bedpe>'],
             in_ccd=arguments['<in_ccd>'],
             out_dir=arguments['<out_dir>'],
+            minor_finding_algorithm=splitting_algorithm,
             chromosome=arguments['<chromosome>']
         )
 
@@ -88,7 +95,7 @@ if __name__ == "__main__":
 
     in_chromosome = int(parsed_args['<chromosome>'])
 
-    if in_chromosome == -1:
+    if in_chromosome == 0:
         chromosome_name = 'all'
     elif in_chromosome == 23:
         chromosome_name = 'x'
