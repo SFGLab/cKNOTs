@@ -10,10 +10,11 @@ import resource
 
 import pandas as pd
 
+from cknots import config
 
-def limit_max_memory(max_memory=None):
-    if max_memory is None:
-        max_memory = 640 * 1024 * 1024 * 1024  # 640 gigabytes
+
+def limit_max_memory():
+    max_memory = config.MAX_MEMORY
     resource.setrlimit(resource.RLIMIT_AS, (max_memory, max_memory))
 
 
@@ -23,7 +24,9 @@ class ComputationScheduler:
                  ccd_timeout=6 * 60 * 60,
                  minor_finding_algorithm='find-k6-linear',
                  splitting_algorithm='splitter',
-                 arguments=None):
+                 arguments=None,
+                 compute_chromosome=False
+                 ):
         """
         Class for scheaduling running of knot finding algorithm.
 
@@ -52,12 +55,16 @@ class ComputationScheduler:
         self.minor_finding_algorithm = self._get_bin_path(minor_finding_algorithm)
         self.splitting_algorithm = self._get_bin_path(splitting_algorithm)
         self.arguments = arguments
+        self.compute_chromosome = compute_chromosome
 
         self.ccd_dirs = []  # filled in in self._run_splitter()
 
         self.resuming_computation = False
 
         logging.info('Computation scheduler created.')
+
+        memory_limit_gb = config.MAX_MEMORY / (1024 * 1024 * 1024)
+        logging.info(f'Running with memory limit: {memory_limit_gb}GB')
 
     def run(self):
         """
@@ -74,122 +81,6 @@ class ComputationScheduler:
                 self._run_full_minor_finder(ccd_dir)
             elif self.minor_finding_algorithm_type == 'linear':
                 self._run_linear_minor_finder(ccd_dir)
-
-    def _run_tree_decomposition(self,
-                                program_path,
-                                directory_with_files,
-                                file_extension,
-                                arguments):
-        pass
-
-    def _run_knot_finder(self,
-                         directory_with_files,
-                         file_extension,
-                         arguments,
-                         results_file_name):
-        ccds_to_process = sorted([x for x in os.listdir(directory_with_files) if x.endswith(file_extension)])
-        all_ccds = pd.read_csv(self.in_ccd,
-                               sep='\t',
-                               header=None,
-                               names=['chromosome', 'start', 'end'])
-
-        chromosome_results = []
-        if self.resuming_computation:
-            chromosome_results = [None] * len(all_ccds)
-
-            with open(os.path.join(directory_with_files, results_file_name)) as f:
-                previous_results = json.load(f)
-
-            for results_for_ccd in previous_results:
-                idx = int(results_for_ccd['input_filename'][-7:-3]) - 1
-                chromosome_results[idx] = results_for_ccd
-
-        csv_chr_name = str(os.path.split(directory_with_files)[-1]) \
-            .replace('_0', '') \
-            .replace('_', '')
-
-        relevant_ccds_iterator = all_ccds[all_ccds['chromosome'] == csv_chr_name].iterrows()
-
-        for i, ccd in enumerate(ccds_to_process):
-
-            try:
-                _, ccd_info = next(relevant_ccds_iterator)
-                ccd_start = ccd_info['start']
-                ccd_end = ccd_info['end']
-            except StopIteration:
-                continue
-
-            ccd_results = {
-                'input_filename': str(ccd),
-                'results_exist': False,
-                'results_not_empty': False,
-                'results_filename': None,
-                'return_code': None,
-                'ccd_start': ccd_start,
-                'ccd_end': ccd_end
-            }
-
-            file_path = os.path.join(directory_with_files, ccd)
-            file_name = os.path.split(file_path)[-1]
-
-            result_path = f'{file_path}.raw_minors'
-
-            if self.resuming_computation and os.path.exists(result_path):
-                logging.info(f'Results for {file_path} already exists, skipping')
-                continue
-
-            logging.info(f'Running minor finder on {file_path}')
-
-            input_cmd = [self.minor_finding_algorithm] + arguments
-
-            try:
-                result = subprocess.run(
-                    input_cmd,
-                    timeout=self.ccd_timeout
-                )
-
-                ccd_results['results_exist'] = True
-                ccd_results['results_filename'] = os.path.split(result_path)[-1]
-                ccd_results['return_code'] = result.returncode
-
-                if result.returncode == 0:
-                    logging.info(f'{file_name} processing finished')
-                else:
-                    if os.path.exists(result_path):
-                        logging.warning(f'{file_name} processing ended with and error, but result file exists. '
-                                        + f'Return code: {result.returncode}')
-                    else:
-                        logging.error(f'{file_name} processing ended with and error, and result file does not exist. '
-                                      + f'Return code: {result.returncode}')
-                        ccd_results['results_exist'] = False
-                        ccd_results['results_filename'] = ''
-
-            except subprocess.TimeoutExpired:
-                logging.error(f'Timeout expired on {file_path}')
-                ccd_results['results_exist'] = False
-                ccd_results['results_filename'] = ''
-                ccd_results['return_code'] = 124
-
-            except Exception as other_exception:
-                logging.error(f'Exception occurred {other_exception}')
-                ccd_results['results_exist'] = False
-                ccd_results['results_filename'] = ''
-                ccd_results['return_code'] = 1
-
-            if os.path.exists(result_path) and os.stat(result_path).st_size > 0:
-                ccd_results['results_not_empty'] = True
-
-            if self.resuming_computation:
-                chromosome_results[i] = ccd_results
-            else:
-                chromosome_results.append(ccd_results)
-
-            with open(os.path.join(directory_with_files, results_file_name), 'w') as f:
-                json.dump(chromosome_results, f, indent=4, sort_keys=True)
-
-        with open(os.path.join(directory_with_files, results_file_name), 'w') as f:
-            json.dump(chromosome_results, f, indent=4, sort_keys=True)
-
 
     def _run_splitter(self):
 
@@ -212,10 +103,6 @@ class ComputationScheduler:
                          '-s',
                          '-f', f'{self.in_bedpe}',
                          '-d', f'{self.in_ccd}']
-
-            # input_cmd = [self.splitting_algorithm,
-            #              f'{self.in_bedpe}',
-            #              f'{self.in_ccd}']
 
             subprocess.run(
                 input_cmd
@@ -270,14 +157,25 @@ class ComputationScheduler:
 
         relevant_ccds_iterator = all_ccds[all_ccds['chromosome'] == csv_chr_name].iterrows()
 
+        ccd_info_start_history = []
+        ccd_info_end_history = []
+
         for i, ccd in enumerate(ccds_to_analyze):
 
             try:
                 _, ccd_info = next(relevant_ccds_iterator)
                 ccd_start = ccd_info['start']
                 ccd_end = ccd_info['end']
+
+                ccd_info_start_history.append(ccd_start)
+                ccd_info_end_history.append(ccd_end)
+
             except StopIteration:
-                continue
+                if self.compute_chromosome:
+                    ccd_start = min(ccd_info_start_history)
+                    ccd_end = max(ccd_info_end_history)
+                else:
+                    continue
 
             ccd_results = {
                 'input_filename': str(ccd),
@@ -380,14 +278,25 @@ class ComputationScheduler:
 
         relevant_ccds_iterator = all_ccds[all_ccds['chromosome'] == csv_chr_name].iterrows()
 
+        ccd_info_start_history = []
+        ccd_info_end_history = []
+
         for i, ccd in enumerate(ccds_to_analyze):
 
             try:
                 _, ccd_info = next(relevant_ccds_iterator)
                 ccd_start = ccd_info['start']
                 ccd_end = ccd_info['end']
+
+                ccd_info_start_history.append(ccd_start)
+                ccd_info_end_history.append(ccd_end)
+
             except StopIteration:
-                continue
+                if self.compute_chromosome:
+                    ccd_start = min(ccd_info_start_history)
+                    ccd_end = max(ccd_info_end_history)
+                else:
+                    continue
 
             ccd_results = {
                 'input_filename': str(ccd),
@@ -429,6 +338,8 @@ class ComputationScheduler:
                 input_cmd = input_cmd + self.arguments
 
             try:
+                logging.info(f'Running: {input_cmd}')
+
                 result = subprocess.run(
                     input_cmd,
                     preexec_fn=limit_max_memory,
