@@ -11,33 +11,49 @@ Chromosome should be an integer between 1-23 (23 is X chromosome) or -1 to run
 all chromosomes.
 
 Usage:
-    cknots.py <in_bedpe> <in_ccd> <out_dir> <chromosome> [timeout]
+    cknots.py <in_bedpe> <in_ccd> <out_dir> <chromosome> [--full] [--compute_chromosome] [--timeout=<t>] [--mem=<m>]
 
 Options:
-    -h --help     Show this help message.
+    -h --help               Show this help message
+    --full                  Use non-linear algorithm
+    --compute_chromosome    Try to find knots on entire chromosome, with 4x timeout of single CCD
+    --timeout=<t>           Single CCD timeout in seconds [default: 21600]
+    --mem=<m>               Memory limit in GB [default: 600]
 """
 import logging
 import os
 from docopt import docopt
-from cknots.cknots import run_docker
 
 
 def run(arguments):
-    if arguments['timeout']:
-        run_docker.run(
-            in_bedpe=arguments['<in_bedpe>'],
-            in_ccd=arguments['<in_ccd>'],
-            out_dir=arguments['<out_dir>'],
-            chromosome=arguments['<chromosome>'],
-            ccd_timeout=arguments['timeout']
-        )
+    if arguments['--full']:
+        splitting_algorithm = 'find-knots'
     else:
-        run_docker.run(
-            in_bedpe=arguments['<in_bedpe>'],
-            in_ccd=arguments['<in_ccd>'],
-            out_dir=arguments['<out_dir>'],
-            chromosome=arguments['<chromosome>']
-        )
+        splitting_algorithm = 'find-k6-linear'
+
+    update_config_memory(arguments['--mem'])
+
+    from cknots.cknots import run_docker
+    run_docker.run(
+        in_bedpe=arguments['<in_bedpe>'],
+        in_ccd=arguments['<in_ccd>'],
+        out_dir=arguments['<out_dir>'],
+        chromosome=arguments['<chromosome>'],
+        minor_finding_algorithm=splitting_algorithm,
+        ccd_timeout=arguments['--timeout'],
+        compute_chromosome=arguments['--compute_chromosome']
+    )
+
+
+def update_config_memory(param):
+    current_file_path = os.path.realpath(__file__)
+    config_file_path = os.path.join(
+        os.path.split(current_file_path)[0],
+        'cknots/config.py'
+    )
+
+    with open(config_file_path, 'w') as f:
+        f.writelines([f'MAX_MEMORY = {int(param)} * 1024 * 1024 * 1024', ''])
 
 
 def create_results_dir(out_dir):
@@ -88,7 +104,7 @@ if __name__ == "__main__":
 
     in_chromosome = int(parsed_args['<chromosome>'])
 
-    if in_chromosome == -1:
+    if in_chromosome == 0:
         chromosome_name = 'all'
     elif in_chromosome == 23:
         chromosome_name = 'x'
