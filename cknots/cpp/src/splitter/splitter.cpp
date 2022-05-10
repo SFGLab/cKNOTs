@@ -335,6 +335,7 @@ segment_array get_ccd_from_file(std::string ccd_file_name)
 void export_to_file(all_edges my_edg, std::string savename, int chrom=-1)
 {
     std::set<long long int> vertices;
+    std::map<long long int, long long int> vertexmap;
     std::string mychrom=chr_from_chrom(chrom);
     for (auto & edgs : my_edg)
     {
@@ -363,6 +364,36 @@ void export_to_file(all_edges my_edg, std::string savename, int chrom=-1)
     savefile.close();
     // we are now save in the tr format for jdrasil
     // the file name has "tr" extension.
+
+//    segment_array from_ccd = get_ccd_from_file(ccd_filename);
+//    std::set<segment> ccd_data = from_ccd.at(chrom);
+//    std::vector<all_edges> split_edges = filter_in_ccd(my_edg, ccd_data);
+
+    std::ofstream savetrfile(savename+".tr");
+      savetrfile << "p " << vertices.size() << " " << vertices.size()+my_edg.size()-1 << std::endl;
+      savetrfile << "c first come edges on the chromatine" << std::endl;
+      vertexmap.clear();
+      long long int jj=0;
+      for (auto & endpoint : vertices)
+      {
+        jj++;
+        {
+          savetrfile << jj << " " << jj+1 << std::endl;
+          vertexmap[endpoint]=jj;
+        }
+      }
+      savetrfile << "c next we deal with interactions" << std::endl;
+      for (auto & myedge : my_edg)
+      {
+        try
+        {
+          savetrfile << vertexmap[myedge.first.first] << " " << vertexmap[myedge.second.first] << std::endl;}
+        catch (...)
+        {
+          std::cout << "Cant save map " << myedge.first.first << " " << myedge.second.first << std::endl;
+        }
+      }
+      savetrfile.close();
 }
 
 int pop_for_chromosome(std::string filename)
