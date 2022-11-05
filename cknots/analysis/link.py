@@ -50,15 +50,23 @@ class Link:
         g = nx.DiGraph()
 
         for endpoint in self.endpoints:
-            g.add_node(endpoint)
+            g.add_node((endpoint.start.locus, endpoint.end.locus))
 
         solid_edges = []
         for i in range(5):
-            solid_edges.append([self.endpoints[i], self.endpoints[i + 1]])
+            solid_edges.append([
+                (self.endpoints[i].start.locus, self.endpoints[i].end.locus),
+                (self.endpoints[i + 1].start.locus, self.endpoints[i + 1].end.locus)
+            ])
 
         jump_edges = []
         for edge in self.edges:
-            jump_edges.append([self.endpoints[edge.left.locus], self.endpoints[edge.right.locus]])
+            jump_edges.append([
+                (self.endpoints[edge.start].start.locus,
+                 self.endpoints[edge.start].end.locus),
+                (self.endpoints[min(edge.end, 5)].start.locus,
+                 self.endpoints[min(edge.end, 5)].end.locus)
+            ])
 
         plt.figure(figsize=(14, 8))
         plt.margins(x=0.2)

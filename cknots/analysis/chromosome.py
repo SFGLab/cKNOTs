@@ -8,7 +8,6 @@ from typing import List
 
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
-from tqdm import tqdm
 
 from cknots.analysis.ccd import CCD
 from cknots.analysis.link import Link
@@ -36,7 +35,7 @@ class Chromosome:
             ccd.remove_duplicate_links()
 
     def remove_similar_links(self, min_differences=1):
-        for ccd in tqdm(self.ccds, desc=f'Chromosome {self.name}'):
+        for ccd in self.ccds:
             ccd.remove_similar_links(min_differences)
 
     def save_to_path(self, name, path):
@@ -83,8 +82,10 @@ class Chromosome:
                       ccd_results['ccd_end'],
                       int(ccd_results['input_filename'].replace('.mp', '')[-12:-8]))
 
+            ccd.load_graph_from_file(os.path.join(path, ccd_results['input_filename']))
+
             if ccd_results['results_exist']:
-                ccd.load_from_file(os.path.join(path, ccd_results['results_filename']))
+                ccd.load_links_from_file(os.path.join(path, ccd_results['results_filename']))
 
             self.ccds.append(ccd)
 

@@ -51,5 +51,4 @@ RUN cmake $MINOR_FINDER_PATH \
 
 RUN chmod +x docker_cknots.sh
 
-
-WORKDIR /data
+ENTRYPOINT ["source", "/venv/bin/activate"]

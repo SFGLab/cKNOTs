@@ -2,9 +2,35 @@ from dataclasses import dataclass, field
 from typing import List
 
 import numpy as np
-from tqdm import tqdm
+import networkx as nx
+from networkx.algorithms.approximation import treewidth_min_degree
 
 from cknots.analysis.link import Link, parse_links_from_string
+
+
+def parse_graph_from_mp(graph_text: str) -> nx.DiGraph:
+    nodes_in = [x.replace('NODE ', '') for x in graph_text.split('\n') if x.startswith('NODE')]
+    edges_in = [x.replace('EDGE ', '') for x in graph_text.split('\n') if x.startswith('EDGE')]
+
+    node_map = dict()
+
+    for i, node in enumerate(nodes_in):
+        node_map[node] = i + 1
+
+    if len(node_map.values()) > 0:
+        number_of_vertices = max(node_map.values())
+    else:
+        number_of_vertices = 0
+
+    edges = [[i + 1, i + 2] for i in range(number_of_vertices - 1)]
+    edges = edges + [[node_map[x.split(' ')[0]], node_map[x.split(' ')[1]]] for x in edges_in]
+
+    output = nx.DiGraph()
+
+    for e in edges:
+        output.add_edge(e[0], e[1])
+
+    return output
 
 
 @dataclass
@@ -13,14 +39,20 @@ class CCD:
     end: int = field(default=None)
     number: int = field(default=None)
     links: List[Link] = field(default_factory=list)
+    graph: nx.DiGraph = field(default_factory=nx.DiGraph)
 
     def count_links(self):
         return len(self.links)
 
-    def load_from_file(self, path):
-        with open(path) as f:
-            text = f.read()
-        self.links = parse_links_from_string(text)
+    def load_links_from_file(self, path_minors):
+        with open(path_minors) as f:
+            links_text = f.read()
+        self.links = parse_links_from_string(links_text)
+
+    def load_graph_from_file(self, path_mp):
+        with open(path_mp) as f:
+            graph_text = f.read()
+        self.graph = parse_graph_from_mp(graph_text)
 
     def remove_duplicate_links(self):
         new_link_list = []
@@ -62,6 +94,21 @@ class CCD:
 
         with open(path, 'w') as f:
             f.write(out_file_contents)
+
+    def treewidth_approximation(self):
+        return treewidth_min_degree(self.graph.to_undirected())[0]
+
+    def cutwidth_heuristic(self):
+        if len(self.graph.nodes) == 0:
+            return 0
+
+        adj_matrix = nx.linalg.adjacency_matrix(self.graph)
+        cutwidth = 0
+        for i in range(1, adj_matrix.shape[0] + 1):
+            potential_cutwidth = adj_matrix[:i, i:].sum()
+            if potential_cutwidth > cutwidth:
+                cutwidth = potential_cutwidth
+        return cutwidth
 
     def __str__(self):
         out_str = f'CCD {self.number}: [{self.start}, {self.end}]: {self.count_links()} links'
