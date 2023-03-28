@@ -57,4 +57,4 @@ def plot(list_of_chromosomes: List[Chromosome],
     ax.get_yaxis().set_ticks(range(len(y_labels)))
     ax.set_yticklabels(y_labels, fontsize=fontsize)
 
-    plt.xlabel("Location (in relation to HG38 reference genome)", fontsize=fontsize)
+    plt.xlabel("Basepair location (in relation to HG38 reference genome)", fontsize=fontsize)

@@ -30,6 +30,11 @@ class Chromosome:
             link_count += len(ccd.links)
         return link_count
 
+    def count_ccds(self):
+        if self.ccds is not None:
+            return len(self.ccds)
+        return 0
+
     def remove_duplicate_links(self):
         for ccd in self.ccds:
             ccd.remove_duplicate_links()
@@ -77,6 +82,9 @@ class Chromosome:
 
         self.ccds = []
         for ccd_results in results_data:
+
+            if ccd_results['ccd_end'] - ccd_results['ccd_start'] > 1e7:
+                continue
 
             ccd = CCD(ccd_results['ccd_start'],
                       ccd_results['ccd_end'],
@@ -130,6 +138,42 @@ class Chromosome:
 
         plt.show()
 
+    def size(self):
+        ccd_ends = [x.end for x in self.ccds]
+        if len(ccd_ends) > 0:
+            return max(ccd_ends)
+        else:
+            return 0
+
+    def similarity_score(self, other: 'Chromosome', tolerance=0):
+        links_count_self = self.count_links()
+        links_count_other = other.count_links()
+
+        overlaps_this = 0
+
+        for link_self in self.get_links():
+            for link_other in other.get_links():
+                if link_self.overlaps_with(link_other, tolerance=tolerance):
+                    overlaps_this += 1
+                    break
+
+        overlaps_other = 0
+        for link_other in other.get_links():
+            for link_self in self.get_links():
+                if link_other.overlaps_with(link_self, tolerance=tolerance):
+                    overlaps_other += 1
+                    break
+
+        if links_count_self + links_count_other == 0:
+            return 1
+        similarity_score = (overlaps_this + overlaps_other) / (links_count_self + links_count_other)
+        # print(f'{overlaps_this=}')
+        # print(f'{overlaps_other=}')
+        # print(f'{links_count_self=}')
+        # print(f'{links_count_other=}')
+
+        return similarity_score
+
     def get_links(self) -> List[Link]:
         links = []
         for ccd in self.ccds:
@@ -145,3 +189,10 @@ class Chromosome:
 
     def __repr__(self):
         return str(self)
+
+    def load_from_dataframe(self, df_chromosome):
+        self.ccds = []
+        for _, row in df_chromosome.iterrows():
+            self.ccds.append(
+                CCD(start=row['start'], end=row['end'])
+            )

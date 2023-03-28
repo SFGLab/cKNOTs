@@ -110,6 +110,12 @@ class CCD:
                 cutwidth = potential_cutwidth
         return cutwidth
 
+    def overlaps_with(self, other: 'CCD'):
+        if self.start < other.end and other.start < self.end:
+            return True
+        else:
+            return False
+
     def __str__(self):
         out_str = f'CCD {self.number}: [{self.start}, {self.end}]: {self.count_links()} links'
         return out_str

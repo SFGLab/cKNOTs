@@ -97,6 +97,12 @@ class Link:
     def max(self):
         return max([x.end.locus for x in self.endpoints])
 
+    def overlaps_with(self, other: 'Link', tolerance=0):
+        if self.min() - tolerance < other.max() + tolerance and other.min() - tolerance < self.max() + tolerance:
+            return True
+        else:
+            return False
+
     def __repr__(self):
         return str(self)
 
