@@ -111,7 +111,10 @@ class ComputationScheduler:
             ccd_files_current_path = os.path.split(self.in_bedpe)[0]
             ccd_files_destination_path = os.path.join(self.out_dir, f'chr_{chromosome_name}')
 
-            files_to_move = [x for x in os.listdir(ccd_files_current_path) if x.endswith(f'.mp') or x.endswith(f'.tr')]
+            files_to_move = [
+                x for x in os.listdir(ccd_files_current_path) \
+                if x.endswith(f'{chromosome:04}.mp') or x.endswith(f'{chromosome:04}.mp.tr')
+            ]
 
             try:
                 os.makedirs(
