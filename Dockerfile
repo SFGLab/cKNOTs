@@ -1,8 +1,8 @@
 FROM teeks99/boost-cpp-docker:gcc-11
-ENV DEBIAN_FRONTEND noninteractive
-ENV SPLITTER_PATH '/cknots-app/cknots/cpp/src/splitter/'
-ENV MINOR_FINDER_PATH '/cknots-app/cknots/cpp/src/minor-finder/'
-ENV BIN_PATH '/cknots-app/cknots/cpp/bin/'
+ENV DEBIAN_FRONTEND=noninteractive
+ENV SPLITTER_PATH='/cknots-app/cknots/cpp/src/splitter/'
+ENV MINOR_FINDER_PATH='/cknots-app/cknots/cpp/src/minor-finder/'
+ENV BIN_PATH='/cknots-app/cknots/cpp/bin/'
 
 COPY requirements/requirements_docker.txt /cknots-app/requirements.txt
 COPY cknots /cknots-app/cknots
@@ -14,19 +14,21 @@ SHELL ["/bin/bash", "-c"]
 
 # Downloading required software
 RUN \
-    apt-get update \
-    && apt -y install python3.9-venv python3-pip cmake libboost-program-options-dev\
+    apt update \
+    && apt -y install python3.10-venv python3-pip libstdc++6 cmake libboost-program-options-dev\
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Setting up Python
 RUN \
-    python3.9 -m venv /venv \
+    python3.10 -m venv /venv \
     && source /venv/bin/activate \
     && pip3 install --upgrade pip \
     && pip3 install --upgrade wheel \
     && pip3 install -r requirements.txt \
-    && python3.9 --version
+    && python3.10 --version
+
+ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
 
 # Creating splitter binary
 RUN cmake $SPLITTER_PATH \
